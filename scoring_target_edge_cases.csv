@@ -1,0 +1,10 @@
+case,n
+seasoned_contracts,8821
+target_dpd30,2113
+target_dpd60,1539
+target_dpd90,1227
+bad_with_unpaid_in_window,1252
+bad_all_paid_but_late,861
+zero_installments_in_6m,0
+max_dpd_6m_0,63
+max_dpd_1_29_good,6645

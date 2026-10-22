@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>MPD Target — финальный прикольный таргет</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root{--bg:#070b12;--card:#121a26;--line:#2a3a4f;--text:#eef3f8;--muted:#8fa0b5;--a:#6eb6ff;--bad:#ff5c7a;--ok:#3dd68c;--gold:#f0c14b}
+    body{margin:0;font-family:Segoe UI,system-ui,sans-serif;background:radial-gradient(800px 400px at 0% 0%,#1a3a5c66,transparent),var(--bg);color:var(--text);line-height:1.55}
+    .w{max-width:960px;margin:0 auto;padding:28px 16px 60px}
+    .eye{color:var(--gold);letter-spacing:.14em;text-transform:uppercase;font-size:.75rem}
+    h1{font-size:clamp(1.5rem,3.5vw,2.1rem);margin:8px 0}
+    .hero{background:linear-gradient(135deg,#1a2438,#121820);border:1px solid var(--line);border-radius:14px;padding:18px;margin:16px 0}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    @media(max-width:800px){.grid{grid-template-columns:1fr 1fr}}
+    .tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+    .num{font-size:1.55rem;font-weight:800}.lbl{color:var(--muted);font-size:.82rem;margin-top:4px}
+    .bad{color:var(--bad)}.ok{color:var(--ok)}.gold{color:var(--gold)}.a{color:var(--a)}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin:12px 0}
+    table{width:100%;border-collapse:collapse;font-size:.9rem}
+    th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left}
+    th{color:var(--muted);font-size:.72rem;text-transform:uppercase}
+    .say{border-left:4px solid var(--gold);background:#0d1520;padding:14px;border-radius:8px}
+    code{color:#9fd0ff;font-family:Consolas,monospace}
+  </style>
+</head>
+<body>
+<div class="w">
+  <div class="eye">Финальный target</div>
+  <h1>MPD — Material & Persistent Delinquency</h1>
+  <p style="color:var(--muted)">Не «опоздал на 30 дней», а <b>материальная и устойчивая</b> просрочка. Так отличаются от шаблонного решения.</p>
+
+  <div class="hero">
+    <b>Правило (6 месяцев после выдачи):</b><br>
+    Bad = <b>неоплата 30+</b> &nbsp;ИЛИ&nbsp; <b>DPD ≥ 60</b> &nbsp;ИЛИ&nbsp; <b>сумма просроченных взносов ≥ 15% выдачи</b> (и был DPD30).
+  </div>
+
+  <div class="grid">
+    <div class="tile"><div class="num a">18.6%</div><div class="lbl">MPD bad rate · 1641 шт</div></div>
+    <div class="tile"><div class="num bad">558</div><div class="lbl">one-off шума отрезали от classic</div></div>
+    <div class="tile"><div class="num gold">73%</div><div class="lbl">из DPD30 потом уходят в 60+</div></div>
+    <div class="tile"><div class="num ok">0%</div><div class="lbl">MPD в healthy active/closed сейчас</div></div>
+  </div>
+
+  <h2>Что нашли в глубине</h2>
+  <div class="card">
+    <table>
+      <tr><th>Находка</th><th>Смысл</th></tr>
+      <tr><td>26% classic-DPD30 — разовые</td><td>Опоздали один раз, закрыли, глубже не ушли. Для банка это шум.</td></tr>
+      <tr><td>Roll rate 30→60 = 73%</td><td>Кто реально токсичен — почти всегда катится дальше.</td></tr>
+      <tr><td>FPD ≥15 дней</td><td>100% потом в зоне серьёзной просрочки.</td></tr>
+      <tr><td>Доля суммы ≥15–20% выдачи</td><td>Почти всегда unpaid / DPD90 — деньги важнее «флажка».</td></tr>
+      <tr><td>Ставка ~31% у bad и good</td><td>Прайсинг риск не видит.</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 8px;font-size:1rem">Состав MPD</h3>
+    <canvas id="cPie" height="120"></canvas>
+  </div>
+  <div class="card">
+    <h3 style="margin:0 0 8px;font-size:1rem">Когорты: MPD bad %</h3>
+    <canvas id="cLine" height="120"></canvas>
+  </div>
+
+  <h2>Внешняя проверка (status_now)</h2>
+  <div class="card">
+    Среди <b>MPD=1</b>: healthy active/closed = <span class="bad">0%</span>, delinq_90plus = <b>54%</b>, written_off = <b>21%</b>.<br>
+    Classic DPD30 тащит больше мягких delinq_30. MPD ближе к <b>реальным потерям</b>.
+  </div>
+
+  <h2>Что сказать</h2>
+  <div class="say">
+    Мы разобрали не только факт DPD30, а траекторию: лечится ли просрочка или катится вниз.
+    26% «классических bad» — разовые случаи. Поэтому target = MPD: неоплата, уход в 60+, либо крупная сумма просрочки относительно кредита.
+    Bad 18.6%, рост к октябрю 2024 до ~30% сохраняется. По текущему статусу договора MPD почти полностью совпадает с тяжёлой просрочкой и write-off.
+  </div>
+</div>
+<script>
+new Chart(document.getElementById('cPie'),{type:'doughnut',data:{labels:['unpaid 30+','rolled to 60+','material ≥15%'],datasets:[{data:[1252,303,86],backgroundColor:['#ff5c7a','#f0c14b','#6eb6ff']}]},options:{plugins:{legend:{labels:{color:'#c5d0dc'}}}}});
+new Chart(document.getElementById('cLine'),{type:'line',data:{labels:['23-06','07','08','09','10','11','12','24-01','02','03','04','05','06','07','08','09','10','11'],datasets:[{data:[18.3,18.6,16.1,11.3,18.4,15.0,13.8,13.7,13.6,16.9,12.9,16.6,20.8,23.1,24.1,23.2,29.8,27.9],borderColor:'#ff5c7a',tension:.25,fill:false}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8fa0b5'},grid:{color:'#2a3a4f'}},y:{ticks:{color:'#8fa0b5'},grid:{color:'#2a3a4f'},title:{display:true,text:'bad %',color:'#8fa0b5'}}}}});
+</script>
+</body>
+</html>

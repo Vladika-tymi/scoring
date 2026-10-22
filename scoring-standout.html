@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Standout — target + фичи не как у всех</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg:#070b12; --card:#121a26; --line:#2a3a4f; --text:#eef3f8; --muted:#8fa0b5;
+      --a:#6eb6ff; --bad:#ff5c7a; --ok:#3dd68c; --gold:#f0c14b;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:
+      radial-gradient(900px 500px at 0% 0%,#1a3a5c66,transparent),
+      radial-gradient(800px 400px at 100% 10%,#5c1a3566,transparent),var(--bg);
+      color:var(--text);line-height:1.55}
+    .w{max-width:980px;margin:0 auto;padding:28px 16px 70px}
+    .eye{color:var(--gold);font-size:.75rem;letter-spacing:.14em;text-transform:uppercase}
+    h1{font-size:clamp(1.5rem,3.5vw,2.1rem);margin:8px 0 10px;line-height:1.2}
+    h2{font-size:1.15rem;margin:30px 0 12px}
+    .lead{color:var(--muted);max-width:42rem}
+    .hero{background:linear-gradient(135deg,#162033,#101824);border:1px solid var(--line);border-radius:14px;padding:18px;margin:18px 0}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    @media(max-width:800px){.grid{grid-template-columns:1fr}}
+    .tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+    .num{font-size:1.7rem;font-weight:800}
+    .lbl{color:var(--muted);font-size:.85rem;margin-top:4px}
+    .bad{color:var(--bad)}.ok{color:var(--ok)}.gold{color:var(--gold)}.a{color:var(--a)}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin:12px 0}
+    table{width:100%;border-collapse:collapse;font-size:.9rem}
+    th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left}
+    th{color:var(--muted);font-size:.75rem;text-transform:uppercase}
+    .tag{display:inline-block;font-size:.7rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--a);margin-right:6px}
+    .tag.new{color:var(--gold);border-color:#5a4a20;background:#2a210f}
+    .tag.you{color:var(--ok);border-color:#1e4a35;background:#0f241a}
+    .say{background:#0d1520;border-left:4px solid var(--gold);padding:14px 16px;border-radius:8px;margin:12px 0}
+    ul{padding-left:1.15rem} li{margin:6px 0}
+    code{color:#9fd0ff;font-family:Consolas,monospace;font-size:.88em}
+  </style>
+</head>
+<body>
+<div class="w">
+  <div class="eye">Чем отличаемся</div>
+  <h1>Не просто «DPD30». Target + фичи, которых нет у «базового» решения</h1>
+  <p class="lead">Оставляем понятный основной target для вторника, но добавляем второй слой для бизнеса и свои фичи из новых таблиц бюро + поведение карты.</p>
+
+  <div class="hero">
+    <b>Фраза для жюри:</b> «Основной target — DPD30 за 6 месяцев, как стандарт раннего риска.
+    Дополнительно смотрим <span class="gold">severe</span>-событие (неоплата 30+ или DPD90) — ближе к реальным потерям.
+    В фичах не коллекшн по нашему кредиту (это будущее), а <span class="gold">история просрочек в бюро до заявки</span>, thin-file и cashflow-прокси с карты.»
+  </div>
+
+  <div class="grid">
+    <div class="tile"><div class="num a">24%</div><div class="lbl"><b>Primary target</b><br>DPD30+ / 6м · n=8821</div></div>
+    <div class="tile"><div class="num bad">14%</div><div class="lbl"><b>Severe target</b><br>unpaid30+ или DPD90 · ближе к убытку</div></div>
+    <div class="tile"><div class="num gold">1.76×</div><div class="lbl"><b>Лучший сигнал</b><br>past hard DPD в бюро → bad 42%</div></div>
+  </div>
+
+  <h2>1. Улучшенный target (двухуровневый)</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>Уровень</th><th>Правило</th><th>Доля</th><th>Зачем</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="tag">MAIN</span> primary</td>
+          <td>max DPD ≥ 30 за 6 мес после выдачи</td>
+          <td><b>23.95%</b></td>
+          <td>На нём учим модель и показываем во вторник</td>
+        </tr>
+        <tr>
+          <td><span class="tag new">NEW</span> severe</td>
+          <td>есть неоплата ≥30д <b>или</b> DPD ≥ 90 за 6м</td>
+          <td><b>14.2%</b></td>
+          <td>«Дорогой» bad — для оценки потерь в среду</td>
+        </tr>
+        <tr>
+          <td><span class="tag">CHECK</span> early</td>
+          <td>DPD ≥ 30 уже за первые 3 мес</td>
+          <td>16.8%</td>
+          <td>Показать, что риск часто проявляется рано</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="color:var(--muted);font-size:.88rem;margin:10px 0 0">
+      Отказы и незрелые — как раньше: отказы без лейбла, незрелые выкинуты.
+      Двухуровневость = вы не «просто скопировали лекцию», вы разделили <b>сигнал риска</b> и <b>тяжёлый убыток</b>.
+    </p>
+  </div>
+
+  <h2>2. Свои фичи — что реально отличает</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>Фича</th><th>Bad %</th><th>Lift</th><th>Почему своя / ок</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="tag you">СВОЁ</span> <code>past_hard_bureau</code><br>worst_dpd_ever ≥ 90 по чужим кредитам до decision</td>
+          <td class="bad">42.1%</td><td>1.76×</td>
+          <td>Идея «был ли жёсткий дефолт раньше» — без leakage коллекшна</td>
+        </tr>
+        <tr>
+          <td><span class="tag you">СВОЁ</span> <code>no_bureau</code></td>
+          <td class="bad">35.4%</td><td>1.48×</td>
+          <td>Информационная дыра важнее «красивого MCC»</td>
+        </tr>
+        <tr>
+          <td><span class="tag you">СВОЁ</span> <code>thin_file</code><br>нет карты + слабое/нет бюро</td>
+          <td class="bad">32.6%</td><td>1.36×</td>
+          <td>Комбо слепой зоны</td>
+        </tr>
+        <tr>
+          <td><span class="tag new">NEW DATA</span> <code>loans_open_asof</code> ≥ 3</td>
+          <td class="bad">45%</td><td>1.88×</td>
+          <td>Новые <code>scoring_bureau_loans</code></td>
+        </tr>
+        <tr>
+          <td><span class="tag you">СВОЁ</span> <code>cashflow_180</code><br>salary − cashout − purchase (прокси баланса)</td>
+          <td>отриц. 26% / плюс ~20%</td><td>—</td>
+          <td>Твой «средний баланс» — честно как cashflow, поля balance нет</td>
+        </tr>
+        <tr>
+          <td><span class="tag">TESTED</span> <code>spend_accel</code><br>расходы last 30d / месяц −3</td>
+          <td>~19–21%</td><td>~1.0</td>
+          <td>Твоя идея динамики расходов — проверили, слабее бюро; честно скажи</td>
+        </tr>
+        <tr>
+          <td><span class="tag new">NEW</span> <code>risk_stack</code><br>сумма флагов риска</td>
+          <td>0→17% … 3→38%</td><td>—</td>
+          <td>Простая интерпретируемая «батарея» для бизнеса</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 10px;font-size:1rem">Risk stack: чем больше флагов — тем выше bad</h3>
+    <canvas id="cStack" height="120"></canvas>
+    <p style="color:var(--muted);font-size:.85rem;margin:8px 0 0">Флаги: no_bureau + thin_file + past_hard_bureau + много открытых кредитов + высокий PTI</p>
+  </div>
+
+  <h2>3. Что сказать, чтобы отличиться (30 сек)</h2>
+  <div class="say">
+    «Мы не остановились на одном бинарном bad. Primary — DPD30/6м для модели.
+    Severe — неоплата или DPD90, чтобы считать потери.
+    В фичах использовали новые bureau_loans/inquiries и свой cashflow-прокси вместо несуществующего баланса.
+    Самый сильный сигнал — жёсткая просрочка в прошлом по бюро (42% bad).
+    Динамику расходов тоже смотрели — она слабее, поэтому в ядро модели не тащим вслепую.»
+  </div>
+
+  <h2>4. Чего НЕ делать (и это тоже плюс на защите)</h2>
+  <div class="card">
+    <ul>
+      <li>Не брать оплату «после звонка коллектора» по <b>нашему</b> договору — leakage.</li>
+      <li>Не брать <code>score_v1</code>, <code>dpd_max</code>, collection по текущему контракту.</li>
+      <li>Не хвастаться слабой фичей: spend trend честно помечен как слабый.</li>
+    </ul>
+  </div>
+
+  <p style="color:var(--muted);font-size:.85rem;margin-top:28px">
+    Файлы: <code>scoring_standout_dataset.csv</code> · <code>Scoring_Standout.xlsx</code> · этот HTML<br>
+    Вторник: primary target + когорты. Среда: модель на primary, экономика на severe.
+  </p>
+</div>
+<script>
+new Chart(document.getElementById('cStack'), {
+  type: 'bar',
+  data: {
+    labels: ['0 флагов','1','2','3','4'],
+    datasets: [{
+      data: [16.7, 20.4, 32.5, 37.7, 40.9],
+      backgroundColor: ['#3dd68c','#7bc96f','#f0c14b','#f08a5a','#ff5c7a']
+    }]
+  },
+  options: {
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{ticks:{color:'#8fa0b5'},grid:{color:'#2a3a4f'}},
+      y:{ticks:{color:'#8fa0b5'},grid:{color:'#2a3a4f'},title:{display:true,text:'bad %',color:'#8fa0b5'}}
+    }
+  }
+});
+</script>
+</body>
+</html>

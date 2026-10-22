@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Вторник — Target и логика</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0c1017; --card: #151c27; --line: #2a3544;
+      --text: #e8eef4; --muted: #8b9aab;
+      --accent: #4d9fff; --bad: #e85d5d; --ok: #3ecf8e; --warn: #e8b84a;
+      --font: "Segoe UI", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.5; }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 28px 16px 64px; }
+    .day { color: var(--accent); font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; }
+    h1 { font-size: 1.7rem; margin: 6px 0 8px; }
+    h2 { font-size: 1.15rem; margin: 28px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+    .sub { color: var(--muted); margin: 0 0 18px; }
+    .q {
+      background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--accent);
+      border-radius: 10px; padding: 14px 16px; margin: 12px 0;
+    }
+    .q .ask { color: var(--muted); font-size: 0.82rem; margin-bottom: 6px; }
+    .q .ans { font-size: 1.05rem; }
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 14px 0; }
+    @media (max-width: 720px) { .kpis { grid-template-columns: 1fr 1fr; } }
+    .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+    .kpi .v { font-size: 1.5rem; font-weight: 700; }
+    .kpi .l { color: var(--muted); font-size: 0.8rem; margin-top: 4px; }
+    .bad .v { color: var(--bad); } .ok .v { color: var(--ok); } .warn .v { color: var(--warn); } .info .v { color: var(--accent); }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin: 12px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th, td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+    th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; }
+    .script { background: #101820; border: 1px dashed var(--line); border-radius: 10px; padding: 14px; }
+    .script p { margin: 0 0 10px; }
+    .wed { opacity: 0.85; border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-top: 28px; }
+    code { color: #9fd0ff; font-family: Consolas, monospace; font-size: 0.9em; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="day">Вторник · показ таргета</div>
+  <h1>Target: что считаем bad и почему</h1>
+  <p class="sub">Snapshot данных: <strong>2025-05-31</strong> · источник: платежи по договорам после выдачи</p>
+
+  <div class="kpis">
+    <div class="kpi info"><div class="v">8 821</div><div class="l">договоров в target (зрелые)</div></div>
+    <div class="kpi bad"><div class="v">23.95%</div><div class="l">доля bad (DPD30+ / 6м)</div></div>
+    <div class="kpi warn"><div class="v">2 456</div><div class="l">незрелые — выкинули</div></div>
+    <div class="kpi ok"><div class="v">6 723</div><div class="l">отказы — без target</div></div>
+  </div>
+
+  <h2>Ответы на вопросы жюри</h2>
+
+  <div class="q">
+    <div class="ask">1. Какое событие считаете bad?</div>
+    <div class="ans">
+      <strong>Bad = 1</strong>, если за горизонт наблюдения по договору была просрочка платежа
+      <strong>≥ 30 дней</strong> (DPD30+).<br>
+      DPD = <code>paid_date − due_date</code>; если не оплатил → <code>2025-05-31 − due_date</code>.
+    </div>
+  </div>
+
+  <div class="q">
+    <div class="ask">2. Какой горизонт?</div>
+    <div class="ans">
+      <strong>Первые 6 месяцев после выдачи</strong> (<code>issue_date</code> … <code>issue_date + 6 months</code>).
+      Одинаковое окно для всех договоров.
+    </div>
+  </div>
+
+  <div class="q">
+    <div class="ask">3. Почему именно так?</div>
+    <div class="ans">
+      <ul style="margin:6px 0 0; padding-left:1.1rem">
+        <li><b>30 дней</b> — отсекаем бытовую задержку на пару дней; в риск-менеджменте DPD30 = ранняя серьёзная просрочка.</li>
+        <li><b>6 месяцев</b> — видим ранний дефолт и ещё оставляем достаточно зрелых когорт для out-of-time (среда).</li>
+        <li>Проверили устойчивость: рост bad к осени 2024 виден и на DPD60/90 — правило не «подогнано».</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="q">
+    <div class="ask">4. Что сделали с отказами?</div>
+    <div class="ans">
+      Отказы (<strong>6 723</strong>) в target <strong>не входят</strong>: договора нет → оплаты не наблюдаем → лейбл bad/good неизвестен.<br>
+      Их используем только для анализа политики (кого резали), не для разметки.
+    </div>
+  </div>
+
+  <div class="q">
+    <div class="ask">5. Что сделали с незрелыми договорами?</div>
+    <div class="ans">
+      Если к snapshot <code>issue_date + 6 months &gt; 2025-05-31</code> — исход ещё неизвестен → <strong>исключили</strong> (<strong>2 456</strong> договоров).<br>
+      Иначе смешали бы «ещё не успел просрочить» с «хороший».
+    </div>
+  </div>
+
+  <h2>Доля bad по когортам выдачи</h2>
+  <div class="card">
+    <canvas id="cCohort" height="130"></canvas>
+    <p style="color:var(--muted); font-size:0.88rem; margin:10px 0 0">
+      База ~18–24% → со 2П 2024 рост → пик <strong>октябрь 2024: 36.3%</strong>.
+      Фраза бизнеса «просрочка выросла» подтверждена.
+    </p>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Когорта</th><th>N</th><th>Bad</th><th>Bad %</th><th>Комментарий</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>2023-06 … 2024-05</td><td>~5 800</td><td>—</td><td>~18–24%</td><td>«старый» режим</td></tr>
+        <tr><td>2024-06 … 2024-09</td><td>~1 900</td><td>—</td><td>~25–29%</td><td>разгон</td></tr>
+        <tr><td>2024-10</td><td>507</td><td>184</td><td><strong>36.29%</strong></td><td>пик</td></tr>
+        <tr><td>2024-11</td><td>502</td><td>166</td><td>33.07%</td><td>всё ещё высоко</td></tr>
+        <tr><td><strong>Всего mature</strong></td><td><strong>8 821</strong></td><td><strong>2 113</strong></td><td><strong>23.95%</strong></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Текст на 60–90 секунд (зачитай почти дословно)</h2>
+  <div class="script">
+    <p>
+      Bad — это просрочка платежа 30 и более дней в первые 6 месяцев после выдачи.
+      Тридцать дней, чтобы не штрафовать за мелкие задержки; шесть месяцев — единый горизонт раннего риска.
+    </p>
+    <p>
+      Отказы не размечаем: без договора нет факта оплаты.
+      Незрелые договоры, у которых окно ещё не закрылось к 31 мая 2025, исключаем — иначе лейбл нечестный.
+    </p>
+    <p>
+      На 8 821 зрелом договоре средний bad rate 24%.
+      По когортам выдачи видно рост: с примерно 20% в начале периода до 36% в октябре 2024.
+      То есть проблема бизнеса в данных подтверждается — завтра на этом таргете строим модель.
+    </p>
+  </div>
+
+  <div class="wed">
+    <div class="day" style="color:var(--warn)">Среда · заранее</div>
+    <h2 style="margin-top:8px; border:0; padding:0">Что готовим завтра (не сегодня)</h2>
+    <ul>
+      <li>Модель на нашем target (логит / деревья — по выбору)</li>
+      <li>Фичи <strong>только ≤ decision_date</strong> (анкета, бюро as-of, карты, новые bureau_inquiries/loans)</li>
+      <li>Сплит <strong>по времени</strong>, не random</li>
+      <li>Бизнес-вывод: порог скора → доля одобрения → bad rate / потери vs текущая политика</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+const labels = ['23-06','07','08','09','10','11','12','24-01','02','03','04','05','06','07','08','09','10','11'];
+const bad = [24.54,23.43,21.53,17.42,24.08,19.96,19.76,17.97,19.83,20.53,19.61,21.92,25.31,27.59,29.21,28.32,36.29,33.07];
+new Chart(document.getElementById('cCohort'), {
+  type: 'line',
+  data: {
+    labels,
+    datasets: [{
+      label: 'bad %',
+      data: bad,
+      borderColor: '#e85d5d',
+      backgroundColor: 'rgba(232,93,93,0.15)',
+      fill: true,
+      tension: 0.25,
+      pointRadius: 3
+    }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: '#8b9aab' }, grid: { color: '#2a3544' } },
+      y: { ticks: { color: '#8b9aab' }, grid: { color: '#2a3544' }, title: { display: true, text: 'bad %', color: '#8b9aab' } }
+    }
+  }
+});
+</script>
+</body>
+</html>

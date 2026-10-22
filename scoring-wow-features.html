@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Scoring WOW — новые фичи и находки</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #070b12; --card: #121a26; --line: #243247;
+      --text: #eef3f8; --muted: #8fa0b5; --accent: #5eb1ff;
+      --hot: #ff5c7a; --good: #3dd68c; --gold: #f0c14b;
+      --font: "Segoe UI", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: var(--font); color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #1a3a5c55, transparent),
+        radial-gradient(900px 500px at 100% 0%, #5c1a3555, transparent),
+        var(--bg);
+      line-height: 1.55;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 32px 18px 70px; }
+    .eyebrow { color: var(--gold); font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; }
+    h1 { font-size: clamp(1.6rem, 4vw, 2.2rem); margin: 8px 0 10px; line-height: 1.2; }
+    h2 { font-size: 1.2rem; margin: 34px 0 12px; }
+    .lead { color: var(--muted); font-size: 1.05rem; max-width: 40rem; }
+    .hero {
+      border: 1px solid var(--line); border-radius: 16px; padding: 22px;
+      background: linear-gradient(135deg, #162033, #101824 60%, #1a1420);
+      margin: 22px 0;
+    }
+    .hero strong { color: var(--gold); }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+    .tile {
+      background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px;
+    }
+    .tile .num { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.02em; }
+    .tile .lbl { color: var(--muted); font-size: 0.85rem; margin-top: 6px; }
+    .hot { color: var(--hot); } .good { color: var(--good); } .gold { color: var(--gold); }
+    .card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+      padding: 18px; margin: 12px 0;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .bar {
+      height: 8px; border-radius: 99px; background: #1c2738; overflow: hidden; min-width: 80px;
+    }
+    .bar > i { display: block; height: 100%; background: linear-gradient(90deg, #3dd68c, #f0c14b, #ff5c7a); }
+    .tag {
+      display: inline-block; font-size: 0.72rem; padding: 3px 9px; border-radius: 999px;
+      border: 1px solid var(--line); color: var(--accent); margin-right: 6px;
+    }
+    .tag.new { color: var(--gold); border-color: #5a4a20; background: #2a210f; }
+    .tag.trap { color: var(--hot); border-color: #5a2030; background: #2a1018; }
+    ul { margin: 8px 0; padding-left: 1.15rem; }
+    li { margin: 6px 0; }
+    code { font-family: Consolas, monospace; font-size: 0.86em; color: #9fd0ff; }
+    .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 700px) { .compare { grid-template-columns: 1fr; } }
+    .vs {
+      text-align: center; font-size: 0.75rem; color: var(--muted); margin: 4px 0;
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Не анкета ради анкеты</div>
+  <h1>Вау-слой: что реально отделяет bad от good</h1>
+  <p class="lead">
+    Обычные фичи (сумма, срок, доход) — база. Ниже — сигналы, из‑за которых модель
+    и защита на собеседовании звучат иначе. Target тот же: <strong>DPD30+ за 6 месяцев</strong>.
+  </p>
+
+  <div class="hero">
+    Главный сюжет роста просрочки: это <strong>не «сломался один канал»</strong>.
+    Во 2П 2024 bad взлетел у branch / agent / app одинаково (~31%).
+    Ставка у bad и good почти одна и та же (~31%) — <strong>банк не ценит риск в цене</strong>.
+    А самый жирный сигнал до выдачи — не MCC и не «ночные траты», а
+    <strong>дыра в данных: нет бюро / нет карты</strong>.
+  </div>
+
+  <div class="grid">
+    <div class="tile">
+      <div class="num hot">35.4%</div>
+      <div class="lbl">bad, если <b>нет bureau snapshot</b> до решения<br>vs 20.7% если бюро есть · lift <b>1.7×</b></div>
+    </div>
+    <div class="tile">
+      <div class="num hot">32.6%</div>
+      <div class="lbl"><b>thin file</b>: нет карты + слабое/нет бюро<br>vs 19.5% у «толстого» файла · lift <b>1.7×</b></div>
+    </div>
+    <div class="tile">
+      <div class="num good">14.6%</div>
+      <div class="lbl">bad у топ-квинтиля bureau score<br>vs 27.5% у дна · монотонный скор работает</div>
+    </div>
+  </div>
+
+  <h2>1. Новые фичи (вот это добавляй в датасет)</h2>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Фича</th><th>Смысл</th><th>Почему вау</th><th>До decision?</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag new">NEW</span><code>no_bureau</code></td>
+          <td>Нет снимка бюро на/до decision_date</td>
+          <td>35% bad — сильнее почти всего</td>
+          <td>да</td>
+        </tr>
+        <tr>
+          <td><span class="tag new">NEW</span><code>has_card</code></td>
+          <td>Были ли txn за 180д до заявки</td>
+          <td>без карты 27.7% vs 20.1% с картой</td>
+          <td>да</td>
+        </tr>
+        <tr>
+          <td><span class="tag new">NEW</span><code>thin_file</code></td>
+          <td>нет карты ∧ (бюро&lt;650 или нет)</td>
+          <td>комбо «слепой зоны» 32.6% bad</td>
+          <td>да</td>
+        </tr>
+        <tr>
+          <td><span class="tag new">NEW</span><code>pti</code></td>
+          <td>requested_amount / declared_income</td>
+          <td>низкий PTI → 18% bad; выше медианы → 26%</td>
+          <td>да</td>
+        </tr>
+        <tr>
+          <td><span class="tag new">NEW</span><code>low_bureau_high_pti</code></td>
+          <td>bureau&lt;600 и PTI выше медианы</td>
+          <td>31% bad · классический toxic combo</td>
+          <td>да</td>
+        </tr>
+        <tr>
+          <td><span class="tag new">NEW</span><code>decline_rate_180d</code></td>
+          <td>доля declined txn до заявки</td>
+          <td>низкий decline 18% → высокий 24%</td>
+          <td>да</td>
+        </tr>
+        <tr>
+          <td><span class="tag new">NEW</span><code>debt_to_income</code></td>
+          <td>existing_debt / declared_income (as-of бюро)</td>
+          <td>нулевой долг ≠ лучше: часто thin-file</td>
+          <td>да</td>
+        </tr>
+        <tr>
+          <td><code>bureau_score</code> (as-of)</td>
+          <td>последний snapshot ≤ decision</td>
+          <td>14.6% → 27.5% по квинтилям</td>
+          <td>да</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="color:var(--muted); font-size:0.88rem; margin:12px 0 0">
+      Файл: <code>scoring_features_wow.csv</code> — target + классика + эти NEW-фичи.
+    </p>
+  </div>
+
+  <h2>2. Три графика, которые заходят на защите</h2>
+  <div class="card">
+    <h3 style="margin:0 0 10px; font-size:1rem;">Bureau score → bad rate</h3>
+    <canvas id="cBureau" height="110"></canvas>
+  </div>
+  <div class="card">
+    <h3 style="margin:0 0 10px; font-size:1rem;">Слепая зона данных</h3>
+    <canvas id="cBlind" height="110"></canvas>
+  </div>
+  <div class="card">
+    <h3 style="margin:0 0 10px; font-size:1rem;">Рост bad во 2П 2024 — все каналы сразу</h3>
+    <canvas id="cCh" height="110"></canvas>
+  </div>
+
+  <h2>3. Инсайты, которых нет в «тупом» списке фичей</h2>
+  <div class="compare">
+    <div class="card">
+      <span class="tag">ИНСАЙТ</span>
+      <h3 style="margin:8px 0">Цена не видит риск</h3>
+      <p>Средняя ставка: good <b>31.02%</b>, bad <b>31.06%</b>. Почти идентично.</p>
+      <p style="color:var(--muted); font-size:0.9rem; margin:0">
+        Значит рост просрочки — не «взяли дороже рисковых». Политика выдачи/селекции сломалась, прайсинг не компенсировал.
+      </p>
+    </div>
+    <div class="card">
+      <span class="tag">ИНСАЙТ</span>
+      <h3 style="margin:8px 0">Отказы уже режутся по бюро</h3>
+      <p>Avg bureau: approved <b>678</b> vs rejected <b>541</b>.</p>
+      <p style="color:var(--muted); font-size:0.9rem; margin:0">
+        Старая политика бюро уже использует. Новые фичи должны бить туда, где бюро молчит: thin-file, has_card, PTI-комбо.
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="tag">ИНСАЙТ</span>
+    <h3 style="margin:8px 0">Что оказалось слабым (тоже важно сказать)</h3>
+    <ul>
+      <li><b>Purpose / channel</b> сами по себе почти не разделяют (~22–25%).</li>
+      <li><b>Entertainment share</b> и «ночные» траты — без вау-эффекта в этой выгрузке.</li>
+      <li><b>Проверка зарплаты vs declared</b> среди тех, у кого есть salary_in — почти плоская. Сигнал не в «лжи о доходе», а в <b>отсутствии следа</b>.</li>
+    </ul>
+  </div>
+
+  <h2>4. Ловушки (чтобы метрика не взорвалась обманом)</h2>
+  <div class="card">
+    <p><span class="tag trap">TRAP</span> <code>score_v1</code> / <code>decision_recommend</code> — готовый скор.</p>
+    <p><span class="tag trap">TRAP</span> <code>dpd_max</code>, <code>contract_status_now</code>, <code>collection_*</code> — будущее после выдачи.</p>
+    <p><span class="tag trap">TRAP</span> «самый свежий» bureau без <code>snapshot_date ≤ decision_date</code>.</p>
+    <p style="margin:0"><span class="tag trap">TRAP</span> платежи после issue — это почти сам target.</p>
+  </div>
+
+  <h2>5. Что сказать одной фразой</h2>
+  <div class="hero">
+    Мы не изобретаем магию из MCC. Мы добавляем фичи про <strong>информационную бедность клиента</strong>
+    (нет бюро / нет карты / thin-file) и про <strong>перегруз запросом</strong> (PTI + низкое бюро).
+    Именно они дают lift 1.5–1.7× к среднему bad rate — и объясняют, куда бить новой моделью,
+    если старая политика уже смотрит на bureau score.
+  </div>
+
+  <p style="color:var(--muted); font-size:0.85rem; margin-top:28px">
+    Данные: academy_db · scoring_* · snapshot 2025-05-31 · n=8821 seasoned · target DPD30+/6м<br>
+    Артефакты: <code>scoring_features_wow.csv</code> · <code>scoring-target-report.html</code> · <code>week_scoring_dataset.ipynb</code>
+  </p>
+</div>
+
+<script>
+const muted = '#8fa0b5';
+const grid = '#243247';
+const opts = (yTitle) => ({
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { ticks: { color: muted }, grid: { color: grid } },
+    y: { ticks: { color: muted }, grid: { color: grid }, title: { display: !!yTitle, text: yTitle || '', color: muted } }
+  }
+});
+
+new Chart(document.getElementById('cBureau'), {
+  type: 'bar',
+  data: {
+    labels: ['≤610', '610–650', '650–692', '692–747', '747–900'],
+    datasets: [{ data: [27.5, 23.3, 20.0, 18.0, 14.6], backgroundColor: ['#ff5c7a','#f08a5a','#f0c14b','#7bc96f','#3dd68c'] }]
+  },
+  options: opts('bad %')
+});
+
+new Chart(document.getElementById('cBlind'), {
+  type: 'bar',
+  data: {
+    labels: ['Есть бюро', 'Нет бюро', 'Есть карта', 'Нет карты', 'Thick file', 'Thin file'],
+    datasets: [{ data: [20.7, 35.4, 20.1, 27.7, 19.5, 32.6], backgroundColor: '#5eb1ff' }]
+  },
+  options: opts('bad %')
+});
+
+new Chart(document.getElementById('cCh'), {
+  type: 'bar',
+  data: {
+    labels: ['agent до H2', 'branch до H2', 'app до H2', 'agent H2+', 'branch H2+', 'app H2+'],
+    datasets: [{
+      data: [21.3, 19.2, 23.3, 31.0, 31.2, 30.7],
+      backgroundColor: ['#3dd68c','#3dd68c','#3dd68c','#ff5c7a','#ff5c7a','#ff5c7a']
+    }]
+  },
+  options: opts('bad %')
+});
+</script>
+</body>
+</html>

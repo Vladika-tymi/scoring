@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Target для кредитного скоринга</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f1419; --card: #1a222d; --border: #2c3848;
+      --text: #e8eef4; --muted: #8b9aab; --accent: #4d9fff;
+      --bad: #e85d5d; --ok: #3ecf8e; --warn: #e8b84a;
+      --font: "Segoe UI", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.55; }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 28px 18px 60px; }
+    h1 { font-size: 1.55rem; margin: 0 0 8px; }
+    h2 { font-size: 1.15rem; margin: 28px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+    .sub { color: var(--muted); margin: 0 0 20px; }
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 18px 0; }
+    @media (max-width: 720px) { .kpis { grid-template-columns: 1fr 1fr; } }
+    .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+    .kpi .v { font-size: 1.45rem; font-weight: 700; }
+    .kpi .l { color: var(--muted); font-size: 0.8rem; margin-top: 4px; }
+    .bad .v { color: var(--bad); } .ok .v { color: var(--ok); } .info .v { color: var(--accent); }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin: 12px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 600; }
+    code, pre { font-family: Consolas, "Cascadia Code", monospace; }
+    pre { background: #121820; border: 1px solid var(--border); border-radius: 8px; padding: 12px; overflow-x: auto; font-size: 0.8rem; }
+    .rule { font-size: 1.05rem; }
+    .tag { display: inline-block; background: #243041; color: var(--accent); padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; }
+    ul { padding-left: 1.2rem; } li { margin: 4px 0; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Target: надёжность клиента после выдачи</h1>
+  <p class="sub">Задание scoring · snapshot <strong>2025-05-31</strong> · файлы: <code>scoring_target.csv</code>, <code>scoring_target_full.csv</code>, <code>scoring_target_by_issue_month.csv</code></p>
+
+  <div class="card rule">
+    <span class="tag">ПРАВИЛО</span>
+    <p style="margin:10px 0 0">
+      <strong>target = 1</strong>, если за первые <strong>6 месяцев</strong> после <code>issue_date</code>
+      максимальный DPD по платежам <strong>≥ 30 дней</strong>. Иначе <strong>0</strong>.
+    </p>
+    <p style="color:var(--muted); margin:8px 0 0; font-size:0.92rem">
+      DPD = <code>paid_date − due_date</code>; если не оплачено → <code>2025-05-31 − due_date</code>.
+      В выборку только договоры с закрытым окном: <code>issue_date + 6 months ≤ 2025-05-31</code>.
+    </p>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi info"><div class="v">8 821</div><div class="l">сезонных договоров (target)</div></div>
+    <div class="kpi bad"><div class="v">23.95%</div><div class="l">bad rate DPD30+ / 6м</div></div>
+    <div class="kpi warn"><div class="v">2 456</div><div class="l">цензура (окно не закрыто)</div></div>
+    <div class="kpi ok"><div class="v">36.3%</div><div class="l">пик bad · окт 2024 выдачи</div></div>
+  </div>
+
+  <h2>Почему такое правило</h2>
+  <div class="card">
+    <ul>
+      <li><strong>6 месяцев</strong> — горизонт, за который успеваем увидеть ранний дефолт, и ещё остаётся история для out-of-time.</li>
+      <li><strong>DPD30+</strong> — банковский стандарт «серьёзной» просрочки; не штрафуем за опоздание на пару дней.</li>
+      <li><strong>Цензура</strong> — свежие договоры (дек 2024 – май 2025) не размечаем: исход ещё неизвестен.</li>
+      <li>Target только у <strong>одобренных</strong> (есть договор). Отказы — для анализа политики, не для лейбла.</li>
+    </ul>
+  </div>
+
+  <h2>Альтернативы (для чувствительности)</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>Определение</th><th>Bad</th><th>Bad %</th></tr></thead>
+      <tbody>
+        <tr><td><code>target</code> = DPD ≥ 30 / 6м (основной)</td><td>2 113</td><td><strong>23.95%</strong></td></tr>
+        <tr><td><code>target_dpd60</code> = DPD ≥ 60 / 6м</td><td>1 539</td><td>17.45%</td></tr>
+        <tr><td><code>target_dpd90</code> = DPD ≥ 90 / 6м</td><td>1 227</td><td>13.91%</td></tr>
+      </tbody>
+    </table>
+    <p style="color:var(--muted); font-size:0.85rem; margin:10px 0 0">Рост просрочки к осени 2024 виден на всех трёх порогах — вывод устойчив.</p>
+  </div>
+
+  <h2>Bad rate по месяцу выдачи</h2>
+  <div class="card">
+    <canvas id="cBad" height="120"></canvas>
+  </div>
+
+  <h2>Краевые случаи</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>Случай</th><th>N</th><th>Как обработали</th></tr></thead>
+      <tbody>
+        <tr><td>Не оплатил к snapshot</td><td>часть bad (1 252 с unpaid в окне)</td><td>DPD = snapshot − due_date</td></tr>
+        <tr><td>Оплатил, но с опозданием ≥30</td><td>861</td><td>target=1, unpaid_cnt=0</td></tr>
+        <tr><td>DPD 1–29 дней</td><td>6 645</td><td>target=0 (порог 30)</td></tr>
+        <tr><td>Вообще без опозданий (DPD=0)</td><td>63</td><td>target=0</td></tr>
+        <tr><td>0 взносов за 6м</td><td>0</td><td>не встретилось</td></tr>
+        <tr><td>Окно 6м не закрыто</td><td>2 456</td><td>исключены из датасета</td></tr>
+        <tr><td>Rejected без договора</td><td>6 723</td><td>нет target</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Что сдавать / какие файлы</h2>
+  <div class="card">
+    <ul>
+      <li><code>scoring_target.csv</code> — формат задания: <code>application_id, client_id, decision_date, target</code></li>
+      <li><code>scoring_target_full.csv</code> — расширенный (DPD, альтернативы, анкета, сумма договора)</li>
+      <li><code>scoring_target_by_issue_month.csv</code> — доля bad по месяцам выдачи</li>
+    </ul>
+  </div>
+
+  <h2>SQL (основной)</h2>
+  <pre>WITH pay AS (
+  SELECT contract_id, due_date,
+         CASE WHEN paid_date IS NOT NULL THEN paid_date - due_date
+              ELSE DATE '2025-05-31' - due_date END AS dpd
+  FROM scoring_payments
+),
+obs AS (
+  SELECT ct.application_id, ct.client_id, a.decision_date,
+         COALESCE(MAX(GREATEST(pay.dpd,0)) FILTER (
+           WHERE pay.due_date &lt;= ct.issue_date + INTERVAL '6 months'
+             AND pay.due_date &lt;= DATE '2025-05-31'
+         ), 0) AS max_dpd_6m
+  FROM scoring_contracts ct
+  JOIN scoring_applications a USING (application_id)
+  LEFT JOIN pay ON pay.contract_id = ct.contract_id
+  WHERE ct.issue_date + INTERVAL '6 months' &lt;= DATE '2025-05-31'
+  GROUP BY 1,2,3, ct.issue_date
+)
+SELECT application_id, client_id, decision_date,
+       CASE WHEN max_dpd_6m &gt;= 30 THEN 1 ELSE 0 END AS target
+FROM obs;</pre>
+</div>
+<script>
+const labels = ['2023-06','07','08','09','10','11','12','2024-01','02','03','04','05','06','07','08','09','10','11'];
+const bad30 = [24.54,23.43,21.53,17.42,24.08,19.96,19.76,17.97,19.83,20.53,19.61,21.92,25.31,27.59,29.21,28.32,36.29,33.07];
+const bad90 = [13.19,14.34,11.67,7.38,13.24,11.71,9.58,8.88,8.47,12.60,9.91,12.71,16.18,18.00,18.86,17.48,25.05,20.32];
+new Chart(document.getElementById('cBad'), {
+  type: 'line',
+  data: {
+    labels,
+    datasets: [
+      { label: 'DPD30+ %', data: bad30, borderColor: '#e85d5d', tension: 0.2 },
+      { label: 'DPD90+ %', data: bad90, borderColor: '#e8b84a', tension: 0.2 },
+    ]
+  },
+  options: {
+    plugins: { legend: { labels: { color: '#c5d0dc' } } },
+    scales: {
+      x: { ticks: { color: '#8b9aab' }, grid: { color: '#243041' } },
+      y: { ticks: { color: '#8b9aab' }, grid: { color: '#243041' }, title: { display: true, text: 'bad %', color: '#8b9aab' } }
+    }
+  }
+});
+</script>
+</body>
+</html>
